@@ -3,12 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./karma.db"
 }
 
 model GithubTip {
-  id              String   @id @default(uuid())
+  id              String   @id @default(cuid())
   prNumber        Int?     @map("pr_number")
   prTitle         String?  @map("pr_title")
   prUrl           String?  @unique @map("pr_url")
@@ -25,7 +25,7 @@ model GithubTip {
 }
 
 model Claim {
-  id              String   @id @default(uuid())
+  id              String   @id @default(cuid())
   claimToken      String   @unique @map("claim_token")
   contributor     String
   amountUsdt      Float    @map("amount_usdt")
@@ -114,7 +114,7 @@ model RumbleMilestone {
 }
 
 model TippingPool {
-  id          String   @id @default(uuid())
+  id          String   @id @default(cuid())
   name        String
   description String?
   totalUsdt   Float    @default(0) @map("total_usdt")

@@ -21,4 +21,5 @@ RUN npm run build
 ENV PORT=10000
 EXPOSE 10000
 
-CMD ["npm", "start"]
+# Guaranteed Startup: Push Schema -> Seed Data -> Run App
+CMD npx prisma db push --accept-data-loss && node dist/scripts/seed-demo.js && npm start
