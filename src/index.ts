@@ -53,24 +53,31 @@ app.get('/claim/:token', (req, res) => {
 })
 
 async function bootstrap() {
-  const wallet = await getWallet()
-  const ethBalance = await wallet.getEthBalance()
-  const tokenBalance = await wallet.getTokenBalance()
-  
-  console.log(`[Karma] Oracle Address: ${await wallet.getAddress()}`)
-  console.log(`[Karma] Balance: ${tokenBalance} USD₮ | Gas: ${ethBalance} ETH`)
-
-  if (parseFloat(tokenBalance) === 0) {
-    console.warn(`[Karma] ⚠️ Warning: 0 USD₮ balance. Funding required!`)
-  }
-
-  // Start background services
-  startRumbleScheduler()
-
+  // 1. Start Web Server IMMEDIATELY to avoid 502 Bad Gateway
   httpServer.listen(PORT, '0.0.0.0', async () => {
-  console.log(`✅ Karma Oracle v3.0 (${process.env.NODE_ENV || 'Production'}) running on 0.0.0.0:${PORT}`)
-  console.log(`🔗 Dashboard: ${process.env.BASE_URL || `http://localhost:${PORT}`}`)
+    console.log(`✅ Karma Oracle v3.0 (Production) Online: 0.0.0.0:${PORT}`)
+    console.log(`🔗 Dashboard: ${process.env.BASE_URL || `http://localhost:${PORT}`}`)
   })
+
+  // 2. Initialize background services asynchronously
+  try {
+    const wallet = await getWallet()
+    const ethBalance = await wallet.getEthBalance()
+    const tokenBalance = await wallet.getTokenBalance()
+    
+    console.log(`[Karma] Oracle Address: ${await wallet.getAddress()}`)
+    console.log(`[Karma] Balance: ${tokenBalance} USD₮ | Gas: ${ethBalance} ETH`)
+
+    if (parseFloat(tokenBalance) === 0) {
+      console.warn(`[Karma] ⚠️ Warning: 0 USD₮ balance. Funding required!`)
+    }
+
+    startRumbleScheduler()
+  } catch (err) {
+    console.error('⚠️ Background Initialization delayed:', err.message)
+    console.log('Re-attempting background services in 30 seconds...')
+    setTimeout(startRumbleScheduler, 30000)
+  }
 }
 
 bootstrap().catch(err => {
