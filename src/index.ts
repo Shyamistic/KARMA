@@ -81,6 +81,5 @@ async function bootstrap() {
 }
 
 bootstrap().catch((err: any) => {
-  console.error('💥 Core system failure:', err)
-  process.exit(1)
+  console.error('⚠️ Critical Bootstrap Warning (Server remains active):', err.message || err)
 })
