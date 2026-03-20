@@ -27,34 +27,25 @@ io.on('connection', (socket) => {
 
 const PORT = Number(process.env.PORT) || 3000;
 
-// Middleware
-app.use(cors())
+// Middleware (once each)
+app.use(cors({ origin: '*' }))
 app.use(express.json())
 app.use(cookieParser())
-app.use(express.json())
-app.use(cors())
+
+// API Routes (MUST come before static/SPA catch-all)
+app.use(router)
+app.use('/api/auth', authRouter)
+app.use('/api/pools', poolsRouter)
+
+app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }))
 
 // Serve React Frontend
 const distPath = path.join(process.cwd(), 'frontend/dist')
 app.use(express.static(distPath))
 
-app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }))
-
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/webhook')) {
-    return next()
-  }
+// SPA fallback - catches all non-API routes
+app.get('*', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'))
-})
-
-// API Routes
-app.use(router)
-app.use('/api/auth', authRouter)
-app.use('/api/pools', poolsRouter)
-
-// Fallback for SPA (if claim or dashboard routes are handled by client)
-app.get('/claim/:token', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/claim.html'))
 })
 
 async function bootstrap() {
