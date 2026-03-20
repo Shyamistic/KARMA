@@ -22,7 +22,7 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => console.log(`[WS] Disconnected: ${socket.id}`))
 })
 
-const PORT = config.PORT || 3000
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors())
@@ -34,6 +34,8 @@ app.use(cors())
 // Serve React Frontend
 const distPath = path.join(process.cwd(), 'frontend/dist')
 app.use(express.static(distPath))
+
+app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }))
 
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/webhook')) {
