@@ -8,18 +8,28 @@ import { config } from '../../lib/config'
 export function startRumbleScheduler(): void {
   // Run every 30 minutes
   cron.schedule('*/30 * * * *', async () => {
-    await runRumbleCheck()
+    try {
+      await runRumbleCheck()
+    } catch (e: any) {
+      console.error('[Scheduler] Regular check failed:', e.message)
+    }
   })
 
-  // Run immediately on startup
-  setTimeout(runRumbleCheck, 5000)
+  // Run immediately on startup (with safety)
+  setTimeout(async () => {
+    try {
+      await runRumbleCheck()
+    } catch (e: any) {
+      console.error('[Scheduler] Initial startup check failed:', e.message)
+    }
+  }, 5000)
 
-  // Fast loop — every 5 minutes for milestone/viral detection (Claude architecture mapping)
+  // Fast loop — every 5 minutes
   setInterval(() => {
     runFastEventMonitor().catch(e => console.error('[Scheduler] Event monitor error:', e.message))
   }, 5 * 60 * 1000)
 
-  console.log('[Rumble] Scheduler started — Full Check: 30m | Fast Event Loop: 5m')
+  console.log('[Rumble] Scheduler started — Resilience Mode Active')
 }
 
 async function runFastEventMonitor(): Promise<void> {
