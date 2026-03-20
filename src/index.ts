@@ -74,13 +74,13 @@ async function bootstrap() {
 
     startRumbleScheduler()
   } catch (err) {
-    console.error('⚠️ Background Initialization delayed:', err.message)
+    console.error('⚠️ Background Initialization delayed:', err instanceof Error ? err.message : String(err))
     console.log('Re-attempting background services in 30 seconds...')
     setTimeout(startRumbleScheduler, 30000)
   }
 }
 
-bootstrap().catch(err => {
+bootstrap().catch((err: any) => {
   console.error('💥 Core system failure:', err)
   process.exit(1)
 })
