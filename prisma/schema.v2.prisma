@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model GithubTip {
+  id              Int      @id @default(autoincrement())
+  prNumber        Int?     @map("pr_number")
+  prTitle         String?  @map("pr_title")
+  prUrl           String?  @map("pr_url")
+  repoName        String?  @map("repo_name")
+  contributor     String?
+  scoreTechnical  Int      @default(0) @map("score_technical")
+  scoreImpact     Int      @default(0) @map("score_impact")
+  scoreEffort     Int      @default(0) @map("score_effort")
+  scoreCommunity  Int      @default(0) @map("score_community")
+  totalScore      Int      @default(0) @map("total_score")
+  tier            String?
+  amountUsdt      Float    @default(0) @map("amount_usdt")
+  reasoning       String?
+  claimToken      String?  @map("claim_token")
+  txHash          String?  @map("tx_hash")
+  tipped          Boolean  @default(false)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("tips")
+}
+
+model Claim {
+  id              String   @id @default(uuid())
+  claimToken      String   @unique @map("claim_token")
+  contributor     String
+  amountUsdt      Float    @map("amount_usdt")
+  prUrl           String?  @map("pr_url")
+  prTitle         String?  @map("pr_title")
+  repoName        String?  @map("repo_name")
+  tier            String?
+  reasoning       String?
+  totalScore      Int      @default(0) @map("total_score")
+  createdAt       DateTime @default(now()) @map("created_at")
+  expiresAt       DateTime @map("expires_at")
+  claimed         Boolean  @default(false)
+  claimedBy       String?  @map("claimed_by")
+  txHash          String?  @map("tx_hash")
+  claimedAt       DateTime? @map("claimed_at")
+  platform        String   @default("github")
+
+  @@map("claims")
+}
+
+model RumbleCreator {
+  username      String   @id
+  walletAddress String?  @map("wallet_address")
+  active        Boolean  @default(true)
+  addedAt       DateTime @default(now()) @map("added_at")
+  notes         String?
+  
+  metrics       RumbleMetric[]
+  tips          RumbleTip[]
+  milestones    RumbleMilestone[]
+
+  @@map("rumble_creators")
+}
+
+model RumbleMetric {
+  id                Int      @id @default(autoincrement())
+  username          String
+  subscribers       Int      @default(0)
+  latestViews       Int      @default(0) @map("latest_views")
+  viewVelocity      Int      @default(0) @map("view_velocity")
+  isLive            Boolean  @default(false) @map("is_live")
+  engagementRate    Float    @default(0) @map("engagement_rate")
+  consistencyScore  Int      @default(0) @map("consistency_score")
+  latestVideoTitle  String?  @map("latest_video_title")
+  latestVideoUrl    String?  @map("latest_video_url")
+  checkedAt         DateTime @default(now()) @map("checked_at")
+
+  creator           RumbleCreator @relation(fields: [username], references: [username])
+
+  @@map("rumble_metrics")
+}
+
+model RumbleTip {
+  id             Int      @id @default(autoincrement())
+  username       String
+  displayName    String?  @map("display_name")
+  videoTitle     String?  @map("video_title")
+  videoUrl       String?  @map("video_url")
+  walletAddress  String?  @map("wallet_address")
+  amountUsdt     Float    @default(0) @map("amount_usdt")
+  tier           String?
+  totalScore     Int      @default(0) @map("total_score")
+  reasoning      String?
+  claimToken     String?  @map("claim_token")
+  txHash         String?  @map("tx_hash")
+  tipped         Boolean  @default(false)
+  tipType        String   @default("direct") @map("tip_type")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  creator        RumbleCreator @relation(fields: [username], references: [username])
+
+  @@map("rumble_tips")
+}
+
+model RumbleMilestone {
+  username     String
+  milestoneKey String   @map("milestone_key")
+  rewardedAt   DateTime @default(now()) @map("rewarded_at")
+
+  creator      RumbleCreator @relation(fields: [username], references: [username])
+
+  @@id([username, milestoneKey])
+  @@map("rumble_milestones")
+}

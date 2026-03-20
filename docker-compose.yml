@@ -1,0 +1,9 @@
+services:
+  karma:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file: .env
+    volumes:
+      - ./karma.db:/app/karma.db
+    restart: unless-stopped

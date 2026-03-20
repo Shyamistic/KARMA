@@ -1,0 +1,9 @@
+node_modules
+dist
+prisma/karma.db
+karma.db
+.env
+.git
+*.md
+Dockerfile
+docker-compose.yml

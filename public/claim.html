@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claim Rewards — Karma Oracle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        :root {
+            --primary: #00FFA3;
+            --primary-glow: rgba(0, 255, 163, 0.4);
+            --bg: #050505;
+            --card-bg: rgba(20, 20, 20, 0.6);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-main: #FFFFFF;
+            --text-dim: #888888;
+            --font-display: 'Syne', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; cursor: none; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            opacity: 0.4;
+        }
+
+        #cursor {
+            position: fixed;
+            width: 8px; height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        .claim-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(40px);
+            border: 1px solid var(--border);
+            padding: 60px;
+            max-width: 540px;
+            width: 90%;
+            border-radius: 4px;
+            position: relative;
+            text-align: center;
+            animation: card-entry 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        @keyframes card-entry {
+            from { opacity: 0; transform: translateY(40px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .oracle-header {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--primary);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+        }
+
+        .amount-wrap {
+            margin-bottom: 24px;
+        }
+
+        .amount-val {
+            font-family: var(--font-display);
+            font-size: 80px;
+            line-height: 1;
+            margin-bottom: 8px;
+            background: linear-gradient(to bottom, #fff, var(--primary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .amount-unit {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .tier-tag {
+            display: inline-block;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 4px 16px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+        }
+
+        .reasoning-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            padding: 24px;
+            text-align: left;
+            margin-bottom: 40px;
+            font-size: 14px;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .oracle-input {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            padding: 16px;
+            color: #fff;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            outline: none;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .oracle-input:focus {
+            border-color: var(--primary);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .claim-btn {
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 20px;
+            font-family: var(--font-display);
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: none;
+            transition: all 0.3s;
+        }
+
+        .claim-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 40px var(--primary-glow);
+        }
+
+        .claim-btn:disabled { opacity: 0.3; }
+
+        .status-msg {
+            margin-top: 24px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            min-height: 1.5em;
+        }
+
+        .success-view { display: none; }
+        .success-view.active { display: block; }
+
+        .tx-link {
+            display: inline-block;
+            margin-top: 24px;
+            color: var(--primary);
+            text-decoration: none;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            border-bottom: 1px solid var(--primary);
+            padding-bottom: 2px;
+        }
+
+        #loading-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div id="cursor"></div>
+
+<div class="claim-card">
+    <div id="loading-overlay">SYNCHRONIZING ORACLE_DATA...</div>
+    
+    <div id="claim-interface">
+        <p class="oracle-header">Reward Authorization Granted</p>
+        
+        <div class="amount-wrap">
+            <h1 class="amount-val" id="claim-amount">0.00</h1>
+            <p class="amount-unit">USD₮ // SEPOLIA NETWORK</p>
+        </div>
+
+        <div class="tier-tag" id="claim-tier">--</div>
+
+        <div class="reasoning-box" id="claim-reasoning">
+            Fetching contribution evaluation from the agentic layer...
+        </div>
+
+        <div class="input-group">
+            <input type="text" class="oracle-input" id="wallet-input" placeholder="0x DESTINATION WALLET ADDRESS">
+            <button class="claim-btn" id="claim-btn" onclick="claimReward()">Redeem Karma</button>
+        </div>
+
+        <div class="status-msg" id="status-msg"></div>
+        <p style="margin-top: 32px; font-size: 11px; color: var(--text-dim); font-family: var(--font-mono);" id="expiry-note"></p>
+    </div>
+
+    <div id="success-view" class="success-view">
+        <p style="font-size: 64px; margin-bottom: 24px;">☯</p>
+        <h2 style="font-family: var(--font-display); font-size: 32px; margin-bottom: 12px;">TRANSFER INITIALIZED</h2>
+        <p style="color:var(--text-dim); font-size: 14px;">The Karma Oracle has authorized your reward distribution.</p>
+        <a href="#" id="tx-link" class="tx-link" target="_blank">VIEW ON ETHERSCAN↗</a>
+    </div>
+
+    <div id="error-view" class="success-view">
+        <p style="font-size: 64px; margin-bottom: 24px; color: #ff4444;">⚠️</p>
+        <h2 style="font-family: var(--font-display); font-size: 32px; margin-bottom: 12px;">AUTHORIZATION_FAILED</h2>
+        <p id="error-text" style="color:var(--text-dim); font-size: 14px;">This reward link is invalid or has already been redeemed.</p>
+    </div>
+</div>
+
+<script>
+    // --- CURSOR ---
+    const cursor = document.getElementById('cursor');
+    document.addEventListener('mousemove', (e) => {
+        cursor.style.left = e.clientX + 'px';
+        cursor.style.top = e.clientY + 'px';
+    });
+
+    // --- CANVAS ---
+    const canvas = document.getElementById('bg-canvas');
+    const c = canvas.getContext('2d');
+    let particles = [];
+    function initCanvas() {
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        particles = [];
+        for (let i = 0; i < 60; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 2,
+                speedX: (Math.random() - 0.5) * 0.3,
+                speedY: (Math.random() - 0.5) * 0.3
+            });
+        }
+    }
+    function animate() {
+        c.clearRect(0, 0, canvas.width, canvas.height);
+        c.fillStyle = 'rgba(0, 255, 163, 0.2)';
+        particles.forEach(p => {
+            p.x += p.speedX; p.y += p.speedY;
+            if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
+            if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
+            c.beginPath(); c.arc(p.x, p.y, p.size, 0, Math.PI * 2); c.fill();
+        });
+        requestAnimationFrame(animate);
+    }
+    window.addEventListener('resize', initCanvas);
+    initCanvas(); animate();
+
+    // --- LOGIC ---
+    const token = window.location.pathname.split('/claim/')[1];
+
+    async function loadClaim() {
+        try {
+            const res = await fetch(`/api/claim/${token}`);
+            if (!res.ok) throw new Error('CLAIM_NOT_FOUND');
+            const claim = await res.json();
+
+            document.getElementById('loading-overlay').style.display = 'none';
+
+            if (claim.expired || claim.claimed) {
+                document.getElementById('claim-interface').style.display = 'none';
+                document.getElementById('error-view').classList.add('active');
+                if (claim.claimed) {
+                    document.getElementById('error-text').innerHTML = `Redeemed by ${claim.claimedBy.slice(0,8)}...<br><a href="https://sepolia.etherscan.io/tx/${claim.txHash}" target="_blank" class="tx-link">VIEW TXN↗</a>`;
+                }
+                return;
+            }
+
+            document.getElementById('claim-amount').textContent = parseFloat(claim.amountUsdt).toFixed(2);
+            document.getElementById('claim-tier').textContent = claim.tier;
+            document.getElementById('claim-reasoning').textContent = claim.reasoning;
+            
+            const expires = new Date(claim.expiresAt);
+            const days = Math.max(0, Math.floor((expires - new Date()) / (1000*60*60*24)));
+            document.getElementById('expiry-note').textContent = `// TTL: ${days} CYCLES REMAINING`;
+
+        } catch (err) {
+            document.getElementById('loading-overlay').textContent = 'ERROR: SYSTEM_OUT_OF_SYNC';
+            document.getElementById('loading-overlay').style.color = '#ff4444';
+        }
+    }
+
+    async function claimReward() {
+        const walletAddress = document.getElementById('wallet-input').value.trim();
+        const btn = document.getElementById('claim-btn');
+        const status = document.getElementById('status-msg');
+
+        if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+            status.textContent = 'ERROR: INVALID_EVM_ADDRESS';
+            status.style.color = '#ff4444';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'REDEEMING...';
+        status.textContent = 'SYNCHRONIZING WITH BLOCKCHAIN...';
+        status.style.color = 'var(--primary)';
+
+        try {
+            const res = await fetch(`/api/claim/${token}/redeem`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ walletAddress })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                document.getElementById('claim-interface').style.display = 'none';
+                document.getElementById('success-view').classList.add('active');
+                document.getElementById('tx-link').href = data.explorerUrl;
+                confetti({
+                    particleCount: 150,
+                    spread: 80,
+                    origin: { y: 0.6 },
+                    colors: ['#00FFA3', '#FFFFFF', '#F59E0B']
+                });
+            } else {
+                status.textContent = `CRITICAL_ERROR: ${data.error.toUpperCase()}`;
+                status.style.color = '#ff4444';
+                btn.disabled = false;
+                btn.textContent = 'Retry Redemption';
+            }
+        } catch (err) {
+            status.textContent = 'ERROR: NETWORK_TIMEOUT';
+            status.style.color = '#ff4444';
+            btn.disabled = false;
+        }
+    }
+
+    loadClaim();
+</script>
+
+</body>
+</html>

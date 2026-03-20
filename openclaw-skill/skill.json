@@ -1,0 +1,34 @@
+{
+  "name": "karma-tipping-agent",
+  "version": "1.0.0",
+  "description": "Orchestrate Karma's community pool tipping agent and event monitoring",
+  "author": "Karma Omnichain Agent",
+  "license": "Apache-2.0",
+  "actions": [
+    {
+      "name": "create_pool",
+      "description": "Creates a new community tipping pool with a specific target and smart split configuration"
+    },
+    {
+      "name": "deposit_to_pool",
+      "description": "Simulates a deposit into a community pool for tipping"
+    },
+    {
+      "name": "trigger_tip",
+      "description": "Force triggers a tip evaluation for a specific Rumble creator from a designated pool"
+    },
+    {
+      "name": "get_pool_stats",
+      "description": "Retrieves the total balance and tips distributed from a community pool"
+    },
+    {
+      "name": "add_creator_rule",
+      "description": "Adds a Rumble channel to be actively monitored for milestones and HTMX wallet extraction"
+    },
+    {
+      "name": "get_tip_history",
+      "description": "Retrieves the latest on-chain transaction history"
+    }
+  ],
+  "webhook": "https://karma-api.local/openclaw"
+}
