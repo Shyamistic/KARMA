@@ -14,7 +14,10 @@ import { startRumbleScheduler } from './services/rumble/scheduler'
 const app = express()
 export const httpServer = createServer(app)
 export const io = new SocketIO(httpServer, {
-  cors: { origin: process.env.FRONTEND_URL || 'http://localhost:5173' }
+  cors: { 
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
 })
 
 io.on('connection', (socket) => {
@@ -56,9 +59,9 @@ app.get('/claim/:token', (req, res) => {
 
 async function bootstrap() {
   // 1. Start Web Server IMMEDIATELY to avoid 502 Bad Gateway
-  httpServer.listen(PORT, '0.0.0.0', async () => {
-    console.log(`✅ Karma Oracle v3.0 (Production) Online: 0.0.0.0:${PORT}`)
-    console.log(`🔗 Dashboard: ${process.env.BASE_URL || `http://localhost:${PORT}`}`)
+  httpServer.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Karma Web Service LIVE on 0.0.0.0:${PORT}`)
+    console.log(`🌐 Public URL: ${process.env.BASE_URL || 'Not Set'}`)
   })
 
   // 2. Initialize background services asynchronously
