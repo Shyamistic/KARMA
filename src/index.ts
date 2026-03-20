@@ -49,31 +49,37 @@ app.get('*', (req, res) => {
 })
 
 async function bootstrap() {
-  // 1. Start Web Server IMMEDIATELY to avoid 502 Bad Gateway
-  httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Karma Web Service LIVE on 0.0.0.0:${PORT}`)
-    console.log(`🌐 Public URL: ${process.env.BASE_URL || 'Not Set'}`)
+  // 1. Mandatory Port Alignment
+  const appPort = Number(process.env.PORT) || 10000;
+
+  // 2. Start Web Server IMMEDIATELY (Zero dependencies)
+  httpServer.listen(appPort, '0.0.0.0', () => {
+    console.log(`🚀 Karma Web Service LIVE on 0.0.0.0:${appPort}`)
+    console.log(`🌐 Public URL: ${process.env.BASE_URL || 'https://karma-lmrx.onrender.com'}`)
   })
 
-  // 2. Initialize background services asynchronously
-  try {
-    const wallet = await getWallet()
-    const ethBalance = await wallet.getEthBalance()
-    const tokenBalance = await wallet.getTokenBalance()
-    
-    console.log(`[Karma] Oracle Address: ${await wallet.getAddress()}`)
-    console.log(`[Karma] Balance: ${tokenBalance} USD₮ | Gas: ${ethBalance} ETH`)
+  // 3. Initialize background services asynchronously (Safe wrapper)
+  setImmediate(async () => {
+    try {
+      console.log('[Karma] Initializing background systems...')
+      const wallet = await getWallet()
+      const ethBalance = await wallet.getEthBalance()
+      const tokenBalance = await wallet.getTokenBalance()
+      
+      console.log(`[Karma] Oracle Address: ${await wallet.getAddress()}`)
+      console.log(`[Karma] Balance: ${tokenBalance} USD₮ | Gas: ${ethBalance} ETH`)
 
-    if (parseFloat(tokenBalance) === 0) {
-      console.warn(`[Karma] ⚠️ Warning: 0 USD₮ balance. Funding required!`)
+      if (parseFloat(tokenBalance) === 0) {
+        console.warn(`[Karma] ⚠️ Warning: 0 USD₮ balance. Funding required!`)
+      }
+
+      startRumbleScheduler()
+    } catch (err: any) {
+      console.error('⚠️ Background Initialization delayed:', err.message || err)
+      console.log('Retrying background startup in 30 seconds...')
+      setTimeout(startRumbleScheduler, 30000)
     }
-
-    startRumbleScheduler()
-  } catch (err) {
-    console.error('⚠️ Background Initialization delayed:', err instanceof Error ? err.message : String(err))
-    console.log('Re-attempting background services in 30 seconds...')
-    setTimeout(startRumbleScheduler, 30000)
-  }
+  })
 }
 
 bootstrap().catch((err: any) => {
