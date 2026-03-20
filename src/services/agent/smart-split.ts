@@ -1,7 +1,7 @@
 import { getWallet } from '../../core/wdk'
 
 export async function executeSplit(pool: any, tip: any) {
-  const config = pool.splitConfig || { creator: 1.0 }
+  const config = pool.splitConfig ? (typeof pool.splitConfig === 'string' ? JSON.parse(pool.splitConfig) : pool.splitConfig) : { creator: 1.0 }
   const creatorAmount = tip.amountUsdt * (config.creator || 1.0)
   
   const wallet = await getWallet()

@@ -110,10 +110,11 @@ router.get('/api/admin/rumble/creators', async (req, res) => {
     const rules = await db.tipRule.findMany()
     const enriched = creators.map((c: any) => {
       const rule = rules.find((r: any) => r.targetCreator === c.username)
+      const parsedConfig = rule?.config ? (typeof rule.config === 'string' ? JSON.parse(rule.config) : rule.config) : {}
       return {
         username: c.username,
         walletAddress: c.walletAddress,
-        targetMilestone: rule ? (rule.type === 'milestone' ? `${(rule.config as any)?.subscriberTarget || 0} Subscribers` : 'Livestream Trigger') : 'Unassigned',
+        targetMilestone: rule ? (rule.type === 'milestone' ? `${parsedConfig.targetMetric || 0} Subscribers` : 'Livestream Trigger') : 'Unassigned',
         htmxStatus: c.walletAddress ? `Extracted (${c.walletAddress.substring(0,5)}...${c.walletAddress.substring(38)})` : 'Pending HTMX Scan...'
       }
     })

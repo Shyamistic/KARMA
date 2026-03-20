@@ -44,7 +44,7 @@ async function main() {
         balanceUsdt: p.balance,
         targetCreator: null,
         isActive: true,
-        splitConfig: { creatorShare: 80, ossShare: 20 }
+        splitConfig: JSON.stringify({ creatorShare: 80, ossShare: 20 })
       }
     })
   }
@@ -86,7 +86,7 @@ async function main() {
         ownerId: admin.id,
         targetCreator: r.creator,
         type: r.type,
-        config: { targetMetric: r.target }
+        config: JSON.stringify({ targetMetric: r.target })
       }
     })
   }

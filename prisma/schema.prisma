@@ -141,7 +141,7 @@ model Pool {
   owner         User      @relation(fields: [ownerId], references: [id])
   balanceUsdt   Float     @default(0)
   targetCreator String?   // null = any creator
-  splitConfig   Json?
+  splitConfig   String? // SQLite-ready JSON string
   isActive      Boolean   @default(true)
   tips          Tip[]
   createdAt     DateTime  @default(now())
@@ -153,7 +153,7 @@ model TipRule {
   owner         User      @relation(fields: [ownerId], references: [id])
   targetCreator String
   type          String
-  config        Json
+  config        String // SQLite-ready JSON string
 }
 
 model Tip {
@@ -166,7 +166,7 @@ model Tip {
   txHash        String?
   network       String    @default("polygon")
   triggerType   String    // "watch_time" | "milestone" | "viral" | "pr_merge"
-  triggerData   Json?
+  triggerData   String? // SQLite-ready JSON string
   status        String    @default("pending")
   createdAt     DateTime  @default(now())
 }
