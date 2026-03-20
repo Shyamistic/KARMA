@@ -61,7 +61,19 @@ async function bootstrap() {
   // 3. Initialize background services asynchronously (Safe wrapper)
   setImmediate(async () => {
     try {
-      console.log('[Karma] Initializing background systems...')
+      console.log('[Karma] Initializing stable SQLite local engine...')
+      const { execSync } = require('child_process');
+      
+      // A. Push schema to internal sqlite file
+      console.log('[DB] Synchronizing schema...');
+      execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+      
+      // B. Seed demo data (using the compiled JS version)
+      console.log('[DB] Seeding high-volume demo data...');
+      execSync('node dist/scripts/seed-demo.js', { stdio: 'inherit' });
+
+      console.log('[Karma] Database is now fully armed.')
+
       const wallet = await getWallet()
       const ethBalance = await wallet.getEthBalance()
       const tokenBalance = await wallet.getTokenBalance()
