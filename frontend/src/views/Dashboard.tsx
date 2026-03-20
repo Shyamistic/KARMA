@@ -39,8 +39,9 @@ const Dashboard: React.FC = () => {
     fetchData();
     const interval = setInterval(fetchData, 30000);
 
-    // Initialize WebSockets
-    socketRef.current = socketIO(import.meta.env.VITE_API_URL || 'http://localhost:3000');
+    // Initialize WebSockets (Dynamic origin for production)
+    const socketUrl = import.meta.env.VITE_API_URL || window.location.origin;
+    socketRef.current = socketIO(socketUrl);
     socketRef.current.on('tip_fired', (tip: any) => {
       setLiveFeed(prev => [tip, ...prev].slice(0, 15)); // Keep last 15
       fetchData(); // Silently refresh global aggregates
