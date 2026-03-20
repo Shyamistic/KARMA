@@ -22,7 +22,7 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => console.log(`[WS] Disconnected: ${socket.id}`))
 })
 
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 // Middleware
 app.use(cors())
