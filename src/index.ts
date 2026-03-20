@@ -67,9 +67,9 @@ async function bootstrap() {
   // Start background services
   startRumbleScheduler()
 
-  httpServer.listen(PORT, async () => {
-  console.log(`✅ Karma Oracle v3.0 (${process.env.NODE_ENV || 'Production'}) running on port ${PORT}`)
-  console.log(`🔗 Dashboard: http://localhost:${PORT}`)
+  httpServer.listen(PORT, '0.0.0.0', async () => {
+  console.log(`✅ Karma Oracle v3.0 (${process.env.NODE_ENV || 'Production'}) running on 0.0.0.0:${PORT}`)
+  console.log(`🔗 Dashboard: ${process.env.BASE_URL || `http://localhost:${PORT}`}`)
   })
 }
 
