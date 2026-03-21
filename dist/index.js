@@ -46,7 +46,7 @@ app.get('*', (req, res) => {
 });
 async function bootstrap() {
     // 1. Mandatory Port Alignment
-    const appPort = Number(process.env.PORT) || 10000;
+    const appPort = Number(process.env.PORT) || 3000;
     // 2. Start Web Server IMMEDIATELY (Zero dependencies)
     exports.httpServer.listen(appPort, '0.0.0.0', () => {
         console.log(`🚀 Karma Web Service LIVE on 0.0.0.0:${appPort}`);

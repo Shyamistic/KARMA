@@ -20,7 +20,7 @@ export const MetricSparkline: React.FC<SparklineProps> = ({ data, color = 'var(-
       borderBottomLeftRadius: '28px',
       borderBottomRightRadius: '28px'
     }}>
-      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+      <ResponsiveContainer width="100%" height={60}>
         <LineChart data={data} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
           <Line 
             type="monotone" 
