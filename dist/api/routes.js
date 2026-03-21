@@ -90,50 +90,70 @@ router.post('/api/claim/:token/execute', async (req, res) => {
     }
 });
 router.get('/api/admin/stats', async (req, res) => {
-    const wallet = await (0, wdk_1.getWallet)();
-    const stats = await (0, db_1.getAggregateStats)();
-    res.json({
-        walletAddress: await wallet.getAddress(),
-        tokenBalance: await wallet.getTokenBalance(),
-        ethBalance: await wallet.getEthBalance(),
-        chain: config_1.config.WDK_CHAIN,
-        github: stats.github,
-        rumble: stats.rumble,
-        pool: stats.pool,
-        dailyBudget: config_1.config.DAILY_BUDGET_USDT,
-    });
+    try {
+        const wallet = await (0, wdk_1.getWallet)();
+        const stats = await (0, db_1.getAggregateStats)();
+        res.json({
+            walletAddress: await wallet.getAddress(),
+            tokenBalance: await wallet.getTokenBalance(),
+            ethBalance: await wallet.getEthBalance(),
+            chain: config_1.config.WDK_CHAIN,
+            github: stats.github,
+            rumble: stats.rumble,
+            pool: stats.pool,
+            dailyBudget: config_1.config.DAILY_BUDGET_USDT,
+        });
+    }
+    catch (err) {
+        console.error('[Stats] Error:', err.message);
+        res.status(503).json({ error: 'Stats temporarily unavailable', details: err.message });
+    }
 });
 // --- PROTECTED ADMIN ---
 router.use('/api/admin', auth_1.authMiddleware);
 router.get('/api/admin/check', auth.checkStatus);
 router.post('/api/admin/logout', auth.logout);
 router.get('/api/admin/tips', async (req, res) => {
-    const limit = parseInt(req.query.limit) || 20;
-    const tips = await (0, db_1.getRecentTips)(limit);
-    res.json({ tips });
+    try {
+        const limit = parseInt(req.query.limit) || 20;
+        const tips = await (0, db_1.getRecentTips)(limit);
+        res.json({ tips });
+    }
+    catch (err) {
+        res.status(503).json({ error: 'DB unavailable', tips: [] });
+    }
 });
 router.get('/api/admin/rumble/tips', async (req, res) => {
-    const tips = await (0, db_1.getRumbleTips)(20);
-    res.json({ tips });
+    try {
+        const tips = await (0, db_1.getRumbleTips)(20);
+        res.json({ tips });
+    }
+    catch (err) {
+        res.status(503).json({ error: 'DB unavailable', tips: [] });
+    }
 });
 router.get('/api/admin/rumble/creators', async (req, res) => {
-    const { getPrisma } = await Promise.resolve().then(() => __importStar(require('../lib/db')));
-    const db = getPrisma();
-    // Fetch from rumble_creators and join with TipRules
-    const creators = await db.rumbleCreator.findMany({
-        where: { active: true }
-    });
-    const rules = await db.tipRule.findMany();
-    const enriched = creators.map((c) => {
-        const rule = rules.find((r) => r.targetCreator === c.username);
-        return {
-            username: c.username,
-            walletAddress: c.walletAddress,
-            targetMilestone: rule ? (rule.type === 'milestone' ? `${rule.config?.subscriberTarget || 0} Subscribers` : 'Livestream Trigger') : 'Unassigned',
-            htmxStatus: c.walletAddress ? `Extracted (${c.walletAddress.substring(0, 5)}...${c.walletAddress.substring(38)})` : 'Pending HTMX Scan...'
-        };
-    });
-    res.json({ creators: enriched });
+    try {
+        const { getPrisma } = await Promise.resolve().then(() => __importStar(require('../lib/db')));
+        const db = getPrisma();
+        const creators = await db.rumbleCreator.findMany({ where: { active: true } });
+        const rules = await db.tipRule.findMany();
+        const enriched = creators.map((c) => {
+            const rule = rules.find((r) => r.targetCreator === c.username);
+            const parsedConfig = rule?.config ? (typeof rule.config === 'string' ? JSON.parse(rule.config) : rule.config) : {};
+            return {
+                username: c.username,
+                walletAddress: c.walletAddress,
+                targetMilestone: rule ? (rule.type === 'milestone' ? `${parsedConfig.targetMetric || 0} Subscribers` : 'Livestream Trigger') : 'Unassigned',
+                htmxStatus: c.walletAddress ? `Extracted (${c.walletAddress.substring(0, 5)}...${c.walletAddress.substring(38)})` : 'Pending HTMX Scan...'
+            };
+        });
+        res.json({ creators: enriched });
+    }
+    catch (err) {
+        console.error('[Creators] DB error:', err.message);
+        res.status(503).json({ error: 'DB unavailable', creators: [] });
+    }
 });
 router.post('/api/admin/rumble/add-creator', async (req, res) => {
     const { username, walletAddress } = req.body;

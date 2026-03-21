@@ -12,15 +12,27 @@ const db_1 = require("../../lib/db");
 function startRumbleScheduler() {
     // Run every 30 minutes
     node_cron_1.default.schedule('*/30 * * * *', async () => {
-        await runRumbleCheck();
+        try {
+            await runRumbleCheck();
+        }
+        catch (e) {
+            console.error('[Scheduler] Regular check failed:', e.message);
+        }
     });
-    // Run immediately on startup
-    setTimeout(runRumbleCheck, 5000);
-    // Fast loop — every 5 minutes for milestone/viral detection (Claude architecture mapping)
+    // Run immediately on startup (with safety)
+    setTimeout(async () => {
+        try {
+            await runRumbleCheck();
+        }
+        catch (e) {
+            console.error('[Scheduler] Initial startup check failed:', e.message);
+        }
+    }, 5000);
+    // Fast loop — every 5 minutes
     setInterval(() => {
         runFastEventMonitor().catch(e => console.error('[Scheduler] Event monitor error:', e.message));
     }, 5 * 60 * 1000);
-    console.log('[Rumble] Scheduler started — Full Check: 30m | Fast Event Loop: 5m');
+    console.log('[Rumble] Scheduler started — Resilience Mode Active');
 }
 async function runFastEventMonitor() {
     const prisma = (0, db_1.getPrisma)();
@@ -52,6 +64,9 @@ async function runFastEventMonitor() {
         }
         catch (e) {
             // ignore
+        }
+        finally {
+            await new Promise(r => setTimeout(r, 1000));
         }
     }
 }
@@ -94,11 +109,13 @@ async function runRumbleCheck() {
                     console.log(`[Rumble] 🔗 Claim for @${username}: ${result.claimUrl}`);
                 }
             }
-            // Rate limit: 2 second delay between creators
-            await new Promise(r => setTimeout(r, 2000));
         }
         catch (err) {
             console.error(`[Rumble] Error processing @${username}:`, err);
+        }
+        finally {
+            // Rate limit: 2 second delay between creators
+            await new Promise(r => setTimeout(r, 2000));
         }
     }
 }

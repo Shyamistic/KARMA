@@ -63,6 +63,8 @@ async function runFastEventMonitor(): Promise<void> {
       }
     } catch (e: any) {
       // ignore
+    } finally {
+      await new Promise(r => setTimeout(r, 1000))
     }
   }
 }
@@ -115,12 +117,11 @@ async function runRumbleCheck(): Promise<void> {
           console.log(`[Rumble] 🔗 Claim for @${username}: ${result.claimUrl}`)
         }
       }
-
-      // Rate limit: 2 second delay between creators
-      await new Promise(r => setTimeout(r, 2000))
-
     } catch (err) {
       console.error(`[Rumble] Error processing @${username}:`, err)
+    } finally {
+      // Rate limit: 2 second delay between creators
+      await new Promise(r => setTimeout(r, 2000))
     }
   }
 }

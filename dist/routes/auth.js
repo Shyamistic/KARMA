@@ -52,15 +52,30 @@ router.post('/register', async (req, res) => {
     }
 });
 router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password)
-        return res.status(400).json({ error: 'Email and password required' });
-    const user = await db.user.findUnique({ where: { email } });
-    if (!user || !(await bcryptjs_1.default.compare(password, user.passwordHash))) {
-        return res.status(401).json({ error: 'Invalid credentials' });
+    const { password, email } = req.body;
+    const ADMIN_PASS = process.env.ADMIN_PASSWORD || 'admin123';
+    // 1. Admin Password Fallback (Demo Mode)
+    // This allows login even if the DB is unreachable
+    if (password === ADMIN_PASS) {
+        console.log('[Auth] Admin login successful via Master Password');
+        const token = jsonwebtoken_1.default.sign({ userId: 'admin', role: 'admin' }, JWT_SECRET, { expiresIn: '7d' });
+        return res.json({ token, user: { id: 'admin', email: 'admin@karma.local' } });
     }
-    const token = jsonwebtoken_1.default.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, email } });
+    // 2. Regular User Login (Database Dependent)
+    try {
+        if (!email || !password)
+            return res.status(400).json({ error: 'Credentials required' });
+        const user = await db.user.findUnique({ where: { email } });
+        if (!user || !(await bcryptjs_1.default.compare(password, user.passwordHash))) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+        const token = jsonwebtoken_1.default.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({ token, user: { id: user.id, email } });
+    }
+    catch (err) {
+        console.error('[Auth] Login error:', err.message);
+        res.status(502).json({ error: 'Database unreachable. Use Admin Password.' });
+    }
 });
 router.post('/logout', authenticate, async (req, res) => {
     if (req.token && req.tokenExp) {

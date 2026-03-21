@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.executeSplit = executeSplit;
 const wdk_1 = require("../../core/wdk");
 async function executeSplit(pool, tip) {
-    const config = pool.splitConfig || { creator: 1.0 };
+    const config = pool.splitConfig ? (typeof pool.splitConfig === 'string' ? JSON.parse(pool.splitConfig) : pool.splitConfig) : { creator: 1.0 };
     const creatorAmount = tip.amountUsdt * (config.creator || 1.0);
     const wallet = await (0, wdk_1.getWallet)();
     console.log(`[SmartSplit] Executing tip of ${tip.amountUsdt} from Pool ${pool.id}`);
